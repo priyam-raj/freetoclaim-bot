@@ -5,8 +5,11 @@
   "type": "module",
   "main": "app.js",
   "scripts": {
-    "test": "node app.js"
+    "test": "node app.js",
+    "start": "node app.js"
+
   },
+ 
   "author": "Priyam Raj",
   "license": "ISC",
   "dependencies": {
