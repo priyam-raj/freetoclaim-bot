@@ -7,19 +7,34 @@ import { promisify } from "util";
 import dotenv from "dotenv";
 import { encode, decode } from "node-base64-image";
 import fs from "fs";
+import { globby } from "globby";
 
 dotenv.config();
 
 // Fetch Today's Date
-let today = new Date().toLocaleDateString("en-us", {
-  weekday: "long",
+var today = new Date().toLocaleDateString("en-us", {
   year: "numeric",
   month: "long",
   day: "numeric",
 });
 
-const readFileAsync = promisify(readFile);
+Date.prototype.addDays = function(days) {
+  let date = new Date(this.valueOf());
+  date.setDate(date.getDate() + days);
+  return date;
+}
 
+let nextWeek = new Date();
+nextWeek = nextWeek.addDays(7).toLocaleDateString("en-us", {
+  month: "long",
+  day: "numeric",
+});
+
+console.log("Next week:", nextWeek);
+
+
+
+const readFileAsync = promisify(readFile);
 console.log("Today is:", today);
 
 // Instagram client
@@ -35,19 +50,30 @@ const client = new TwitterApi({
 });
 
 const freetoclaim = client.readWrite;
-async function tweetNow() {
 
 
+async function tweetNow(status, when) {
+  const gameNames = fs.readFileSync(`public/${status}/gameData.txt`, "utf8");
+  const imagePaths = await globby([`public/${status}/*.jpg`]);
+  // console.log(gameNames);
+  // console.log(imagePaths);
 
   const tweet = async () => {
     try {
-      const mediaId = await client.v1.uploadMedia(
-        `https://cdn1.epicgames.com/spt-assets/8ae16e8a55fa4f3897fa726a90dbd750/download-shop-titans-offer-1mnbg.jpg`
-      );
+
+      let randAd = [];
+
+      for (var i = 0; i < imagePaths.length; i++) {
+        let mediaId = await client.v1.uploadMedia(imagePaths[i]);
+        randAd.push(mediaId);
+      }
+
+
+    
       await freetoclaim.v2.tweet(
-        `🌤 Free on Epic Games today\n📅 ${today}\n \n🌟 Support-A-Creator code: Pri #EpicPartner`,
+        `🌤 Free on Epic Games ${when}\n📅 Now - ${nextWeek}\n\n${gameNames} 8:30 PM IST\n🌟 Support-A-Creator code: Pri #EpicPartner`,
         {
-          media: { media_ids: [mediaId] },
+          media: { media_ids: randAd},
         }
       );
       console.log("Tweeted.");
@@ -78,10 +104,8 @@ async function tweetNow() {
 //   }
 // }
 
-
-
 async function fetchCurrentGames() {
-  purgegameDataFiles()
+  purgegameDataFiles();
   getGames("US", true)
     .then((res) => {
       let currentGames = res.currentGames;
@@ -91,6 +115,8 @@ async function fetchCurrentGames() {
         let numberOfGames = i + 1;
         let status = "current";
         saveImage(gameImage, gameString, status, numberOfGames);
+        console.log(res);
+
       }
     })
     .catch((err) => {
@@ -99,7 +125,7 @@ async function fetchCurrentGames() {
 }
 
 async function fetchUpcomingGames() {
-  purgegameDataFiles()
+  purgegameDataFiles();
   getGames("US", true)
     .then((res) => {
       let upcomingGames = res.nextGames;
@@ -133,9 +159,11 @@ async function saveImage(imageURL, gameName, status, noOfGames) {
     fs.mkdirSync("public/upcoming");
   }
 
-  let stream = fs.createWriteStream(`public/${status}/gameData.txt` , {'flags': 'a'});
-    stream.once("open", function (fd) {
-    stream.write(`${gameName}\n`);
+  let stream = fs.createWriteStream(`public/${status}/gameData.txt`, {
+    flags: "a",
+  });
+  stream.once("open", function (fd) {
+    stream.write(`- ${gameName}\n`);
   });
 
   // writing to file named 'example.jpg'
@@ -143,45 +171,36 @@ async function saveImage(imageURL, gameName, status, noOfGames) {
   await decode(image, { fname: `./public/${status}/${gameName}`, ext: "jpg" });
 }
 
-
 async function purgegameDataFiles() {
-fs.unlink('public/upcoming/gameData.txt', function(err) {
-  if(err && err.code == 'ENOENT') {
+  fs.unlink("public/upcoming/gameData.txt", function (err) {
+    if (err && err.code == "ENOENT") {
       // console.info("public/upcoming/gameData.txt not found found");
-  } else if (err) {
+    } else if (err) {
       console.error("Error occurred while trying to remove file");
-  } else {
+    } else {
       // console.info(`Purged files.`);
-  }
-});
+    }
+  });
 
-fs.unlink('public/current/gameData.txt', function(err) {
-  if(err && err.code == 'ENOENT') {
+  fs.unlink("public/current/gameData.txt", function (err) {
+    if (err && err.code == "ENOENT") {
       // console.info("public/current/gameData.txt not found");
-  } else if (err) {
+    } else if (err) {
       console.error("Error occurred while trying to remove file");
-  } else {
+    } else {
       // console.info(`Purged files.`);
-  }
-});
+    }
+  });
 }
 
-
-// let text = fs.readFileSync('public/current/gameData.txt','utf8')
-// console.log (text)
-
-
-
-// await fetchCurrentGames();
-// await fetchUpcomingGames();
-
-
+await fetchCurrentGames();
+// fetchUpcomingGames();
+tweetNow("current", "today");
 
 // Run every day at 00:03
 // let socialPost = new CronJob(
 //     "03 00 * * *",
 //     async function () {
-//       tweetNow();
 //       instagramPost();
 //     },
 //     true
