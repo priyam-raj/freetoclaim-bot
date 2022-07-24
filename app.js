@@ -218,9 +218,8 @@ let postUpcomingGames = new CronJob(
 );
 
 await fetchCurrentGames();
-await timeout(3000);
 await fetchUpcomingGames();
-await timeout(3000);
+
 postCurrentGames.start();
 postUpcomingGames.start();
 
