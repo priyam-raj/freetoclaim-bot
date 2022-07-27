@@ -1,51 +1,23 @@
 import { CronJob } from "cron";
 import { getGames } from "epic-free-games";
 import { TwitterApi } from "twitter-api-v2";
+import dotenv from "dotenv";
 import { IgApiClient } from "instagram-private-api";
 import { readFile } from "fs";
 import { promisify } from "util";
-import dotenv from "dotenv";
 import { encode, decode } from "node-base64-image";
 import fs from "fs";
 import { globby } from "globby";
 
 dotenv.config();
 
-// Fetch Today's Date
-var today = new Date().toLocaleDateString("en-us", {
-  month: "long",
-  day: "numeric",
-});
-
-Date.prototype.addDays = function(days) {
-  let date = new Date(this.valueOf());
-  date.setDate(date.getDate() + days);
-  return date;
-}
-
-let nextWeek = new Date();
-nextWeek = nextWeek.addDays(7).toLocaleDateString("en-us", {
-  month: "long",
-  day: "numeric",
-});
-
-let nextNextWeek = new Date();
-nextNextWeek = nextNextWeek.addDays(14).toLocaleDateString("en-us", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
-
-console.log("Next week:", nextNextWeek);
-
-const readFileAsync = promisify(readFile);
-console.log("Today is:", today);
-
 // Instagram client
 const { username, password } = process.env;
 const ig = new IgApiClient();
 
+
 // Twitter client
+const readFileAsync = promisify(readFile);
 const client = new TwitterApi({
   appKey: process.env.CONSUMER_KEY,
   appSecret: process.env.CONSUMER_SECRET,
@@ -55,59 +27,112 @@ const client = new TwitterApi({
 
 const freetoclaim = client.readWrite;
 
-
 async function tweetNow(status, firstLine, from, until) {
-  const gameNames = fs.readFileSync(`public/${status}/gameData.txt`, "utf8");
-  const imagePaths = await globby([`public/${status}/*.jpg`]);
-  // console.log(gameNames);
-  // console.log(imagePaths);
 
+
+    // Fetch Today's Date
+    var today = new Date().toLocaleDateString("en-us", {
+      month: "long",
+      day: "numeric",
+    });
+  
+    Date.prototype.addDays = function (days) {
+      let date = new Date(this.valueOf());
+      date.setDate(date.getDate() + days);
+      return date;
+    };
+  
+    let nextWeek = new Date();
+    nextWeek = nextWeek.addDays(7).toLocaleDateString("en-us", {
+      month: "long",
+      day: "numeric",
+    });
+  
+    let nextNextWeek = new Date();
+    nextNextWeek = nextNextWeek.addDays(14).toLocaleDateString("en-us", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  
+
+if ( status == 'current'){
+  from = today
+  until = nextWeek
+}
+
+if ( status == 'upcoming'){
+  from = nextWeek
+  until = nextNextWeek
+}
+
+const gameNames = fs.readFileSync(`public/${status}/gameData.txt`, "utf8");
+const imagePaths = await globby([`public/${status}/*.jpg`]);
+
+if (imagePaths.length > 0) {
   const tweet = async () => {
     try {
-
-      let randAd = [];
-
+      let twitterMediaIDs = [];
       for (var i = 0; i < imagePaths.length; i++) {
         let mediaId = await client.v1.uploadMedia(imagePaths[i]);
-        randAd.push(mediaId);
+        twitterMediaIDs.push(mediaId);
       }
-    
+
       await freetoclaim.v2.tweet(
-        `🌟 Free on Epic Games Store ${firstLine}\n⏰ ${from} - ${until} (8:30 PM IST)\n\n${gameNames}\n\nUse code pri on the epic games store #ad`,
+        `Free on Epic Games Store ${firstLine}\n${from} - ${until} (8:30 PM IST)\n\n${gameNames}\n\nUse code pri on the epic games store #ad`,
         {
-          media: { media_ids: randAd},
+          media: { media_ids: twitterMediaIDs },
         }
       );
-      console.log(`Tweeted ${status}`);
+      console.log(`Tweeted ${status} games`);
     } catch (e) {
       console.log(e);
     }
   };
   tweet();
+} else {const tweet = async () => {
+  try {
+    await freetoclaim.v2.tweet(
+      `OH SHIT, ERROR OR NO GAMES THIS WEEK`,
+    );
+    console.log(`Tweeted the error`);
+  } catch (e) {
+    console.log(e);
+  }
+};
+tweet();
+}
 }
 
-// async function instagramPost() {
-//   try {
-//     ig.state.generateDevice(username);
-//     // await ig.simulate.preLoginFlow();
-//     const user = await ig.account.login(username, password)
-//     const path = "public/itemshop-square.jpg";
-//     const published = await ig.publish.photo({
-//       file: await readFileAsync(path),
-//       caption: `Today's Item Shop on Fortnite.\n📅 | ${today}\n🌟 | Support-A-Creator: Pri (#EpicPartner)
-//       \n➖➖➖➖➖➖➖➖➖➖➖➖\n
-//       📺 Follow @freetoclaim for daily Fortnite updates!
+async function instagramPost(status, firstLine, from, until) {
+  ig.state.generateDevice(username);
+  const user = await ig.account.login(username, password);
+  const gameNames = fs.readFileSync(`public/${status}/gameData.txt`, "utf8");
+  let imagePaths = await globby([`public/${status}/*.jpg`]);
 
-//       ➖➖➖➖➖➖➖➖➖➖➖➖\n\n\n#freetoclaim #fortniteitemshop #fortnitelive #fortniteps5 #fortnitenews #fortnitepc #fortnitepictures #timenite #fortniteclips #fortniteteam #fortnitecombos #fortnite #fortniteleaks #fortnitebr #fortnitecommunity #fortnitememes`,
-//     });
-//     console.log("And now posted to Instagram");
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
+  // Fetch Today's Date
+  let today = new Date().toLocaleDateString("en-us", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  console.log(imagePaths);
+
+  try {
+    const published = await ig.publish.album({
+      items: imagePaths,
+      caption: `🌟 Free on Epic Games Store.`,
+    });
+    console.log("And now posted to Instagram");
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 async function fetchCurrentGames() {
-  purgegameDataFiles('current');
+  purgegameDataFiles("current");
   getGames("US", true)
     .then((res) => {
       let currentGames = res.currentGames;
@@ -118,29 +143,39 @@ async function fetchCurrentGames() {
         let status = "current";
         saveImage(gameImage, gameString, status, numberOfGames);
       }
-      console.log('\n\nFetched current games.');
+      console.log("Fetched current games.");
     })
     .catch((err) => {
-      console.log("Error while fetching current games.");
+      console.log("Error while fetching current games");
     });
 }
 
 async function fetchUpcomingGames() {
-  purgegameDataFiles('upcoming');
+  purgegameDataFiles("upcoming");
   getGames("US", true)
     .then((res) => {
-      let upcomingGames = res.nextGames;
-      for (var i = 0; i < upcomingGames.length; i++) {
-        let gameImage = upcomingGames[i].keyImages[1].url;
-        let gameString = upcomingGames[i].title;
+      let nextGames = res.nextGames;
+
+      if (nextGames.length === 0) {
+        let stream = fs.createWriteStream(`public/upcoming/gameData.txt`, {
+          flags: "a",
+        });
+        stream.once("open", function (fd) {
+          stream.write(`OH SHIT, ERROR OR NO GAMES THIS WEEK\n`);
+        });
+      }
+
+      for (var i = 0; i < nextGames.length; i++) {
+        let gameImage = nextGames[i].keyImages[1].url;
+        let gameString = nextGames[i].title;
         let numberOfGames = i + 1;
         let status = "upcoming";
         saveImage(gameImage, gameString, status, numberOfGames);
       }
-      console.log('Fetched upcoming games.\n\n');
+      console.log("Fetched upcoming games");
     })
     .catch((err) => {
-      console.log("Error while fetching upcoming games.");
+      console.log(err);
     });
 }
 
@@ -176,44 +211,41 @@ async function saveImage(imageURL, gameName, status, noOfGames) {
 async function purgegameDataFiles(folder) {
   fs.unlink(`public/${folder}/gameData.txt`, function (err) {
     if (err && err.code == "ENOENT") {
-      // console.info("public/upcoming/gameData.txt not found found");
+      console.info(`public/${folder}/gameData.txt not found`);
     } else if (err) {
       console.error("Error occurred while trying to remove file");
     } else {
-      // console.info(`Purged files.`);
+      console.info(`Purged files`);
     }
   });
 }
 
 // Set 3 second delay (For compressions and resizes.)
 function timeout(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 
 // Run every week on Thursdays at 8:30 PM IST
 let postCurrentGames = new CronJob(
-  "0 15 * * 4",
+  "30 20 * * 4",
   async function () {
-  await fetchCurrentGames();
-  await timeout(10000);
-  await tweetNow("current", "today", today, nextWeek);
-  console.log('Posted current games.');
+    await fetchCurrentGames();
+    await timeout(3000);
+    await tweetNow("current", "today");
+    console.log("Posted current games automatically");
   },
   true
 );
 
-
-// Run every week on Thursdays at 8:00 PM IST
+// Run every week on Thursdays at 8:00:15 PM IST
 let postUpcomingGames = new CronJob(
-  "30 14 * * 4",
+  "15 00 20 * * 4",
   async function () {
-  await timeout(3000);
-  await fetchUpcomingGames();
-  await timeout(10000);
-  await tweetNow("upcoming", "next week", nextWeek, nextNextWeek);
-  console.log('Posted upcoming games automatically');
-},
+    await fetchUpcomingGames();
+    await timeout(3000);
+    await tweetNow("upcoming", "next week");
+    console.log("Posted upcoming games automatically");
+  },
   true
 );
 
@@ -224,4 +256,5 @@ postCurrentGames.start();
 postUpcomingGames.start();
 
 await timeout(3000);
-console.log('Cron jobs have begun.');
+console.log("Cron jobs have begun.");
+await tweetNow("current", "now");
