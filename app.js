@@ -2,22 +2,13 @@ import { CronJob } from "cron";
 import { getGames } from "epic-free-games";
 import { TwitterApi } from "twitter-api-v2";
 import dotenv from "dotenv";
-import { IgApiClient } from "instagram-private-api";
-import { readFile } from "fs";
-import { promisify } from "util";
 import { encode, decode } from "node-base64-image";
 import fs from "fs";
 import { globby } from "globby";
 
 dotenv.config();
 
-// Instagram client
-const { username, password } = process.env;
-const ig = new IgApiClient();
-
-
 // Twitter client
-const readFileAsync = promisify(readFile);
 const client = new TwitterApi({
   appKey: process.env.CONSUMER_KEY,
   appSecret: process.env.CONSUMER_SECRET,
@@ -93,7 +84,7 @@ if (imagePaths.length > 0) {
 } else {const tweet = async () => {
   try {
     await freetoclaim.v2.tweet(
-      `OH SHIT, ERROR OR NO GAMES THIS WEEK`,
+      `OH S***, ERROR OR NO GAMES THIS WEEK\n\nSomeone tell Priyam AAAAAAAAAAAAAA`,
     );
     console.log(`Tweeted the error`);
   } catch (e) {
@@ -104,32 +95,6 @@ tweet();
 }
 }
 
-async function instagramPost(status, firstLine, from, until) {
-  ig.state.generateDevice(username);
-  const user = await ig.account.login(username, password);
-  const gameNames = fs.readFileSync(`public/${status}/gameData.txt`, "utf8");
-  let imagePaths = await globby([`public/${status}/*.jpg`]);
-
-  // Fetch Today's Date
-  let today = new Date().toLocaleDateString("en-us", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  console.log(imagePaths);
-
-  try {
-    const published = await ig.publish.album({
-      items: imagePaths,
-      caption: `🌟 Free on Epic Games Store.`,
-    });
-    console.log("And now posted to Instagram");
-  } catch (error) {
-    console.log(error);
-  }
-}
 
 async function fetchCurrentGames() {
   purgegameDataFiles("current");
@@ -161,7 +126,7 @@ async function fetchUpcomingGames() {
           flags: "a",
         });
         stream.once("open", function (fd) {
-          stream.write(`OH SHIT, ERROR OR NO GAMES THIS WEEK\n`);
+          stream.write(`OH S***, ERROR OR NO GAMES THIS WEEK\nAAAAAAAAAAA`);
         });
       }
 
@@ -215,7 +180,7 @@ async function purgegameDataFiles(folder) {
     } else if (err) {
       console.error("Error occurred while trying to remove file");
     } else {
-      console.info(`Purged files`);
+      console.info(`Purged ${folder} files`);
     }
   });
 }
@@ -257,4 +222,4 @@ postUpcomingGames.start();
 
 await timeout(3000);
 console.log("Cron jobs have begun.");
-await tweetNow("current", "now");
+
