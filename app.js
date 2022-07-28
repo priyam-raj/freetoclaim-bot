@@ -8,6 +8,21 @@ import { globby } from "globby";
 
 dotenv.config();
 
+
+
+    // Fetch Today's Date
+    var tempToday = new Date().toLocaleDateString("en-us", {
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+    });
+
+
+    console.log(tempToday);
+
+
 // Twitter client
 const client = new TwitterApi({
   appKey: process.env.CONSUMER_KEY,
@@ -20,12 +35,12 @@ const freetoclaim = client.readWrite;
 
 async function tweetNow(status, firstLine, from, until) {
 
-
     // Fetch Today's Date
     var today = new Date().toLocaleDateString("en-us", {
       month: "long",
       day: "numeric",
     });
+
   
     Date.prototype.addDays = function (days) {
       let date = new Date(this.valueOf());
@@ -97,7 +112,7 @@ tweet();
 
 
 async function fetchCurrentGames() {
-  purgegameDataFiles("current");
+  await purgegameDataFiles("current");
   getGames("US", true)
     .then((res) => {
       let currentGames = res.currentGames;
@@ -116,7 +131,7 @@ async function fetchCurrentGames() {
 }
 
 async function fetchUpcomingGames() {
-  purgegameDataFiles("upcoming");
+  await purgegameDataFiles("upcoming");
   getGames("US", true)
     .then((res) => {
       let nextGames = res.nextGames;
@@ -174,9 +189,10 @@ async function saveImage(imageURL, gameName, status, noOfGames) {
 }
 
 async function purgegameDataFiles(folder) {
-  fs.unlink(`public/${folder}/gameData.txt`, function (err) {
+  fs.rm(`public/${folder}`, { recursive: true }, 
+  function (err) {
     if (err && err.code == "ENOENT") {
-      console.info(`public/${folder}/gameData.txt not found`);
+      console.info(`public/${folder} not found`);
     } else if (err) {
       console.error("Error occurred while trying to remove file");
     } else {
@@ -190,9 +206,9 @@ function timeout(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Run every week on Thursdays at 8:30 PM IST
+// Run every week on Thursdays at 8:30 PM IST (+30 minutes offset)
 let postCurrentGames = new CronJob(
-  "30 20 * * 4",
+  "30 15 * * 4",
   async function () {
     await fetchCurrentGames();
     await timeout(3000);
@@ -202,9 +218,9 @@ let postCurrentGames = new CronJob(
   true
 );
 
-// Run every week on Thursdays at 8:00:15 PM IST
+// Run every week on Thursdays at 8:00:15 PM IST (+30 minutes offset)
 let postUpcomingGames = new CronJob(
-  "15 00 20 * * 4",
+  "15 30 14 * * 4",
   async function () {
     await fetchUpcomingGames();
     await timeout(3000);
@@ -222,4 +238,4 @@ postUpcomingGames.start();
 
 await timeout(3000);
 console.log("Cron jobs have begun.");
-
+await tweetNow("upcoming", "next week.");
