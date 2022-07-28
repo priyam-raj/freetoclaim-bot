@@ -238,4 +238,3 @@ postUpcomingGames.start();
 
 await timeout(3000);
 console.log("Cron jobs have begun.");
-await tweetNow("upcoming", "next week.");
