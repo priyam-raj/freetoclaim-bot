@@ -206,9 +206,9 @@ function timeout(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Run every week on Thursdays at 8:30 PM IST (+30 minutes offset)
+// Run every week on Thursdays at 15:30:00 UTC (as per +30 minutes offset)
 let postCurrentGames = new CronJob(
-  "30 15 * * 4",
+  "15 30 14 * * 4",
   async function () {
     await fetchCurrentGames();
     await timeout(3000);
@@ -218,9 +218,9 @@ let postCurrentGames = new CronJob(
   true
 );
 
-// Run every week on Thursdays at 8:00:15 PM IST (+30 minutes offset)
+// Run every week on Thursdays at 15:00:15 UTC (as per +30 minutes offset)
 let postUpcomingGames = new CronJob(
-  "15 30 14 * * 4",
+  "15 00 15 * * 4",
   async function () {
     await fetchUpcomingGames();
     await timeout(3000);
