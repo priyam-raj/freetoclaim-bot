@@ -208,7 +208,7 @@ function timeout(ms) {
 
 // Run every week on Thursdays at 08:00:30 IST
 let postCurrentGames = new CronJob(
-  "10 30 20 * * 4",
+  "10 00 15 * * 4",
   async function () {
     await fetchCurrentGames();
     await timeout(3000);
@@ -221,7 +221,7 @@ let postCurrentGames = new CronJob(
 
 // Run every week on Thursdays at 08:00:30 IST
 let postUpcomingGames = new CronJob(
-  "30 30 20 * * 4",
+  "30 00 15 * * 4",
   async function () {
     await fetchUpcomingGames();
     await timeout(3000);
