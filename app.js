@@ -206,7 +206,7 @@ function timeout(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Run every week on Thursdays at 15:00:30 UTC 
+// Run every week on Thursdays at 08:00:30 IST
 let postCurrentGames = new CronJob(
   "10 30 20 * * 4",
   async function () {
@@ -219,7 +219,7 @@ let postCurrentGames = new CronJob(
 );
 
 
-// Run every week on Thursdays at 15:00:15 UTC 
+// Run every week on Thursdays at 08:00:30 IST
 let postUpcomingGames = new CronJob(
   "30 30 20 * * 4",
   async function () {
@@ -234,6 +234,7 @@ let postUpcomingGames = new CronJob(
 
 await fetchCurrentGames();
 await fetchUpcomingGames();
+
 
 postCurrentGames.start();
 postUpcomingGames.start();
