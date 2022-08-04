@@ -1,4 +1,4 @@
-# FreeToClaim Bot
+# freetoclaim Bot
 Generates images for Epic Games Store's weekly free Games and posts it to social media every thursday at 8:30 PM IST, automatically.
 
 
