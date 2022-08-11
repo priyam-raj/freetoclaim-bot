@@ -212,7 +212,7 @@ let postCurrentGames = new CronJob(
   async function () {
     await fetchCurrentGames();
     await timeout(3000);
-    await tweetNow("current", "today");
+    await tweetNow("current", "from today");
     console.log("Posted current games automatically");
   },
   true
@@ -225,7 +225,7 @@ let postUpcomingGames = new CronJob(
   async function () {
     await fetchUpcomingGames();
     await timeout(3000);
-    await tweetNow("upcoming", "next week");
+    await tweetNow("upcoming", "from next week");
     console.log("Posted upcoming games automatically");
   },
   true
